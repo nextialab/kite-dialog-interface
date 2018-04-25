@@ -1,0 +1,64 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="UTF-8"> 
+	<title>Kite Dialog Interface</title>
+	<link rel="stylesheet" type="text/css" href="/css/kite.css" />
+</head>
+<body ng-app="kite">
+	<h2>Kite Dialog Interface</h2>
+	<div ng-controller="mainController">
+		<div>
+			<h3>Dialog</h3>
+			<p>Name: <input ng-model="json.name" type="text" /></p>
+			<fieldset>
+				<legend>Event</legend>
+				<p>Name: <input type="text" ng-model="event.name" /></p>
+				<p ng-repeat="response in event.responses">{{ response.type }}: {{ response.text }} <button ng-click="removeResponse($index)">-</button></p>
+				<p>
+					<select ng-model="response.type">
+						<option value="text">text</option>
+						<option value="image">image</option>
+						<option value="video">video</option>
+					</select>
+					<input ng-model="response.text" type="text" />
+					<button ng-click="addResponse()">+ response</button>
+				</p>
+				<p> Control:
+					<select ng-model="control.type">
+						<option value="none">none</option>
+						<option value="options">options</option>
+						<option value="entity">entity</option>
+					</select>
+				</p>
+				<p ng-if="control.type == 'entity'">Entity: <input ng-model="control.entity" type="text" /></p>
+				<div ng-if="control.type == 'options'">
+					<div ng-repeat="option in control.options">
+						<p>Label: {{ option.label }} -> Triggers: {{ option.triggers }} <button ng-click="removeOption($index)">-</button></p>
+					</div>
+					<p>Label: <input ng-model="option.label" type="text" /> Triggers: <input ng-model="option.triggers" type="text" /> <button ng-click="addOption()">+ option</button></p>
+				</div>
+				<p><button ng-click="addEvent()">Add event</button></p>
+			</fieldset>
+			<fieldset>
+				<legend>Entity</legend>
+				<p>Name: <input ng-model="entity.name" type="text" /></p>
+				<p ng-repeat="example in entity.examples">{{ example }}</p>
+				<p><input ng-model="example" type="text" /><button ng-click="addExample()">+ example</button></p>
+				<p><input ng-model="entity.triggers" /></p>
+				<p><button ng-click="addEntity()">Add entity</button></p>
+			</fieldset>
+		</div>
+		<div>
+			<h3>Flow</h3>
+		</div>
+		<div class="separator"></div>
+		<div>
+			<h3>JSON</h3>
+			<pre><code>{{ getJson() }}</code></pre>
+		</div>
+	</div>
+	<script src="/js/angular.min.js"></script>
+	<script src="/js/kite.js"></script>
+</body>
+</html>
