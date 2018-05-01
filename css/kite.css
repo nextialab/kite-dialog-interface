@@ -1,5 +1,35 @@
 .separator {
+	float: clear;
 	width: 100%;
 	height: 1px;
 	background-color: gray;
+}
+
+.center {
+	text-align: center;
+}
+
+.row0 {
+	width: 0;
+	float: left;
+}
+
+.row1 {
+	width: 100%;
+	float: left;
+}
+
+.row2 {
+	width: 50%;
+	float: left;
+}
+
+.row3 {
+	width: 33%;
+	float: left;
+}
+
+.row4 {
+	width: 25%;
+	float: left;
 }

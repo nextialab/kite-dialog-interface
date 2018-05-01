@@ -51,10 +51,14 @@
 		</div>
 		<div>
 			<h3>Flow</h3>
+			<!-- <p>Not connected: {{ getFloatingEvents() }}</p> -->
+			<div ng-repeat="row in flow">
+				<div ng-repeat="event in row" ng-class="getRowClass(row)"><p class="center">{{ event.name }}</p></div>
+			</div>
 		</div>
 		<div class="separator"></div>
 		<div>
-			<h3>JSON</h3>
+			<h3>JSON <button ng-click="copyJson()">Copy</button></h3>
 			<pre><code>{{ getJson() }}</code></pre>
 		</div>
 	</div>
