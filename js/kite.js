@@ -1,4 +1,49 @@
-angular.module('kite', []).controller('mainController', ['$scope', function ($scope) {
+angular.module('kite', ['ui.bootstrap'])
+.controller('editResponse', ['$scope', '$uibModalInstance', 'response', function ($scope, $uibModalInstance, response) {
+
+	$scope.type = 'text';
+	$scope.text = '';
+
+	if (response) {
+		$scope.type = response.type;
+		$scope.text = response.text;
+	}
+
+	$scope.save = function () {
+		$uibModalInstance.close({
+			type: $scope.type,
+			text: $scope.text
+		});
+	}
+
+	$scope.cancel = function () {
+		$uibModalInstance.dismiss('cancel');
+	}
+
+}])
+.controller('editOption', ['$scope', '$uibModalInstance', 'option', function ($scope, $uibModalInstance, option) {
+
+	$scope.label = '';
+	$scope.triggers = '';
+
+	if (option) {
+		$scope.label = option.label;
+		$scope.triggers = option.triggers;
+	}
+
+	$scope.save = function () {
+		$uibModalInstance.close({
+			label: $scope.label,
+			triggers: $scope.triggers
+		});
+	}
+
+	$scope.cancel = function () {
+		$uibModalInstance.dismiss('cancel');
+	}
+
+}])
+.controller('mainController', ['$scope', '$uibModal', function ($scope, $uibModal) {
 
 	$scope.json = {};
 	$scope.json.name = '';
@@ -17,18 +62,11 @@ angular.module('kite', []).controller('mainController', ['$scope', function ($sc
 	}
 	var control = {
 		type: 'entity',
+		tool: '',
 		entity: '',
 		options: []
 	}
 
-	$scope.response = {
-		type: 'text',
-		text: ''
-	};
-	$scope.option = {
-		label: '',
-		triggers: ''
-	};
 	$scope.example = '';
 	$scope.control = {};
 	$scope.event = {};
@@ -39,7 +77,32 @@ angular.module('kite', []).controller('mainController', ['$scope', function ($sc
 	}
 
 	$scope.addOption = function () {
-		$scope.control.options.push(angular.copy($scope.option));
+		$uibModal.open({
+			controller: 'editOption',
+			templateUrl: 'editOption.html',
+			resolve: {
+				option: null
+			}
+		}).result.then(function (opt) {
+			$scope.control.options.push(opt);
+		}, function (err) {
+			console.log(err);
+		});
+	}
+
+	$scope.editOption = function (option) {
+		$uibModal.open({
+			controller: 'editOption',
+			templateUrl: 'editOption.html',
+			resolve: {
+				option: option
+			}
+		}).result.then(function (opt) {
+			option.label = opt.label;
+			option.triggers = opt.triggers;
+		}, function (err) {
+			console.log(err);
+		});
 	}
 
 	$scope.removeOption = function (index) {
@@ -51,7 +114,32 @@ angular.module('kite', []).controller('mainController', ['$scope', function ($sc
 	}
 
 	$scope.addResponse = function () {
-		$scope.event.responses.push(angular.copy($scope.response));
+		$uibModal.open({
+			controller: 'editResponse',
+			templateUrl: 'editResponse.html',
+			resolve: {
+				response: null
+			}
+		}).result.then(function (res) {
+			$scope.event.responses.push(res);
+		}, function (err) {
+			console.log(err);
+		});
+	}
+
+	$scope.editResponse = function (response) {
+		$uibModal.open({
+			controller: 'editResponse',
+			templateUrl: 'editResponse.html',
+			resolve: {
+				response: response
+			}
+		}).result.then(function (res) {
+			response.type = res.type;
+			response.text = res.text;
+		}, function (err) {
+			console.log(err);
+		});
 	}
 
 	function generateFlow() {
@@ -128,22 +216,71 @@ angular.module('kite', []).controller('mainController', ['$scope', function ($sc
 		$scope.flow = flow;
 	}
 
-	$scope.addEvent = function () {
-		if ($scope.control.type == 'entity') {
-			$scope.event.control = {
-				type: 'entity',
-				entity: $scope.control.entity
+	$scope.saveEvent = function () {
+		var event_to_save = $scope.json.events.find(function (event) {
+			return event.name === $scope.event.name;
+		});
+		if (event_to_save) {
+			delete $scope.event.options;
+			delete $scope.event.entity;
+			delete $scope.event.tool;
+			event_to_save.responses = angular.copy($scope.event.responses);
+			if ($scope.control.type == 'entity') {
+				event_to_save.control = {
+					type: 'entity',
+					entity: angular.copy($scope.control.entity)
+				};
+			} else if ($scope.control.type == 'options') {
+				event_to_save.control = {
+					type: 'options',
+					options: angular.copy($scope.control.options)
+				};
+			} else if ($scope.control.type == 'tool') {
+				event_to_save.control = {
+					type: 'tool',
+					tool: angular.copy($scope.control.tool)
+				};
 			}
-		} else if ($scope.control.type == 'options') {
-			$scope.event.control = {
-				type: 'options',
-				options: $scope.control.options
+		} else {
+			if ($scope.control.type == 'entity') {
+				$scope.event.control = {
+					type: 'entity',
+					entity: $scope.control.entity
+				};
+			} else if ($scope.control.type == 'options') {
+				$scope.event.control = {
+					type: 'options',
+					options: $scope.control.options
+				};
+			} else if ($scope.control.type == 'tool') {
+				$scope.event.control = {
+					type: 'tool',
+					tool: $scope.control.tool
+				};
 			}
+			$scope.json.events.push(angular.copy($scope.event));
 		}
-		$scope.json.events.push(angular.copy($scope.event));
 		generateFlow();
 		$scope.control = angular.copy(control);
 		$scope.event = angular.copy(event);
+	}
+
+	$scope.editEvent = function (index) {
+		var event_to_edit = $scope.json.events[index];
+		$scope.event.name = event_to_edit.name;
+		$scope.event.responses = event_to_edit.responses;
+		if (event_to_edit.control) {
+			if (event_to_edit.control.type == 'entity') {
+				$scope.control.type = 'entity';
+				$scope.control.entity = event_to_edit.control.entity;
+			} else if (event_to_edit.control.type == 'options') {
+				$scope.control.type = 'options';
+				$scope.control.options = event_to_edit.control.options;
+			} else if (event_to_edit.control.type == 'tool') {
+				$scope.control.type == 'tool';
+				$scope.control.tool = event_to_edit.control.tool;
+			}
+		}
 	}
 
 	$scope.removeEvent = function (index) {

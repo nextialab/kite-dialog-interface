@@ -3,72 +3,170 @@
 <head>
 	<meta charset="UTF-8"> 
 	<title>Kite Dialog Interface</title>
+	<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css" />
 	<link rel="stylesheet" type="text/css" href="css/kite.css" />
 </head>
 <body ng-app="kite">
-	<h2>Kite Dialog Interface</h2>
+	<h1>Kite Dialog Interface</h1>
 	<div ng-controller="mainController">
-		<h3>Dialog</h3>
 		<p>Name: <input ng-model="json.name" type="text" /></p>
-		<div class="container">
-			<div class="row3">
-				<fieldset>
-					<legend>Event</legend>
-					<p>Name: <input type="text" ng-model="event.name" /></p>
-					<p ng-repeat="response in event.responses">{{ response.type }}: {{ response.text }} <button ng-click="removeResponse($index)">-</button></p>
-					<p>
-						<select ng-model="response.type">
-							<option value="text">text</option>
-							<option value="image">image</option>
-							<option value="video">video</option>
-						</select>
-						<input ng-model="response.text" type="text" />
-						<button ng-click="addResponse()">+ response</button>
-					</p>
-					<p> Control:
-						<select ng-model="control.type">
-							<option value="none">none</option>
-							<option value="options">options</option>
-							<option value="entity">entity</option>
-						</select>
-					</p>
-					<p ng-if="control.type == 'entity'">Entity: <input ng-model="control.entity" type="text" /></p>
-					<div ng-if="control.type == 'options'">
-						<div ng-repeat="option in control.options">
-							<p>Label: {{ option.label }} -> Triggers: {{ option.triggers }} <button ng-click="removeOption($index)">-</button></p>
+		<div class="container-fluid">
+			<div class="row">
+				<div class="col-sm-4">
+					<h2>Events</h2>
+					<form>
+						<div class="form-group">
+							<label for="eventName">Name:</label>
+							<input class="form-control" type="text" ng-model="event.name" />
 						</div>
-						<p>Label: <input ng-model="option.label" type="text" /> Triggers: <input ng-model="option.triggers" type="text" /> <button ng-click="addOption()">+ option</button></p>
-					</div>
-					<p><button ng-click="addEvent()">Add event</button></p>
-				</fieldset>
-				<fieldset>
-					<legend>Entity</legend>
-					<p>Name: <input ng-model="entity.name" type="text" /></p>
+						<p><b>Responses:</b></p>
+						<table class="table">
+							<tr>
+								<th>Type</th>
+								<th>Text</th>
+								<th>Actions</th>
+							</tr>
+							<tr ng-repeat="response in event.responses">
+								<td>{{ response.type }}</td>
+								<td>{{ response.text }}</td>
+								<td><button class="btn" disabled="disabled"><span class="glyphicon glyphicon-chevron-up"></span></button> <button class="btn" disabled="disabled"><span class="glyphicon glyphicon-chevron-down"></button> <button class="btn btn-primary" ng-click="editResponse(response)"><span class="glyphicon glyphicon-edit"></span></button> <button class="btn btn-danger" ng-click="removeResponse($index)"><span class="glyphicon glyphicon-trash"></span></button></td>
+							</tr>
+						</table>
+						<p>
+							<button class="btn btn-success" ng-click="addResponse()">Add response</button>
+						</p>
+						<div class="form-group">
+							<label for="controlType">Control type:</label>
+							<select id="controlType" class="form-control" ng-model="control.type">
+								<option value="none">none</option>
+								<option value="options">options</option>
+								<option value="entity">entity</option>
+								<option value="tool">tool</option>
+							</select>
+						</div>
+						<div class="form-group" ng-if="control.type == 'tool'">
+							<label for="controlTool">Tool:</label>
+							<input id="controlTool" class="form-control" ng-model="control.tool" type="text" />
+						</div>
+						<div class="form-group" ng-if="control.type == 'entity'">
+							<label for="controlEntity">Entity:</label>
+							<input id="controlEntity" class="form-control" ng-model="control.entity" type="text" />
+						</div>
+						<div class="form-group" ng-if="control.type == 'options'">
+							<p><b>Options:</b></p>
+							<table class="table">
+								<tr>
+									<th>Label</th>
+									<th>Triggers</th>
+									<th>Actions</th>
+								</tr>
+								<tr ng-repeat="option in control.options">
+									<td>{{ option.label }}</td>
+									<td>{{ option.triggers }}</td>
+									<td><button class="btn btn-primary" ng-click="editOption(option)"><span class="glyphicon glyphicon-edit"></span></button> <button class="btn btn-danger" ng-click="removeOption($index)"><span class="glyphicon glyphicon-trash"></span></button></td>
+								</tr>
+							</table>
+							<p><button class="btn btn-success" ng-click="addOption()">Add option</button></p>
+						</div>
+					</form>
+					<p><button class="btn btn-primary" ng-click="saveEvent()">Save event</button></p>
+					<p><b>Events</b></p>
+					<table class="table">
+						<tr>
+							<th>Event name</th>
+							<th>Actions</th>
+						</tr>
+						<tr ng-repeat="event in json.events">
+							<td>{{ event.name }}</td>
+							<td><button ng-click="editEvent($index)">Edit</button> <button ng-click="removeEvent($index)">Remove</button></td>
+						</tr>
+					</table>
+				</div>
+				<div class="col-sm-4">
+					<h3>Entities</h3>
+					<p><b>Name:</b></p>
+					<p><input ng-model="entity.name" type="text" /></p>
+					<p><b>Examples:</b></p>
 					<p ng-repeat="example in entity.examples">{{ example }}</p>
 					<p><input ng-model="example" type="text" /><button ng-click="addExample()">+ example</button></p>
-					<p>Triggers: <input ng-model="entity.triggers" /></p>
-					<p><button ng-click="addEntity()">Add entity</button></p>
-				</fieldset>
+					<p><b>Triggers:</b></p>
+					<p><input ng-model="entity.triggers" /></p>
+					<p><button class="btn btn-primary" ng-click="addEntity()">Save entity</button></p>
+					<table>
+						<tr>
+							<th>Entity</th>
+							<th>Actions</th>
+						</tr>
+						<tr ng-repeat="entity in json.entities">
+							<td>{{ entity.name }}</td>
+							<td><button>Edit</button> <button ng-click="removeEntity($index)">Remove</button></td>
+						</tr>
+					</table>
+				</div>
+				<div class="col-sm-4">
+					<h3>Flow</h3>
+					<div ng-repeat="row in flow">
+						<div ng-repeat="event in row" ng-class="getRowClass(row)"><p class="center">{{ event.name }}</p></div>
+					</div>
+				</div>
 			</div>
-			<div class="row3">
-				<h3>Events</h3>
-				<p ng-repeat="event in json.events">{{ event.name }} <button ng-click="removeEvent($index)">-</button></p>
-				<h3>Entities</h3>
-				<p ng-repeat="entity in json.entities">{{ entity.name }} <button ng-click="removeEntity($index)">-</button></p>
-			</div>
-			<div class="row3">
-				<h3>Flow</h3>
-				<div ng-repeat="row in flow">
-					<div ng-repeat="event in row" ng-class="getRowClass(row)"><p class="center">{{ event.name }}</p></div>
+			<div class="row">
+				<div class="col-sm-12">
+					<h3>JSON</h3>
+					<p> <button ng-click="copyJson()">Copy</button> <button ng-click="loadJson()">Load</button></p>
+					<pre><code>{{ getJson() }}</code></pre>
 				</div>
 			</div>
 		</div>
-		<div class="row1">
-			<h3>JSON <button ng-click="copyJson()">Copy</button></h3>
-			<pre><code>{{ getJson() }}</code></pre>
-		</div>
 	</div>
+	<script type="text/ng-template" id="editResponse.html">
+		<div class="modal-header">
+			<h3 class="modal-title">Edit response</h3>
+		</div>
+		<div class="modal-body">
+			<form>
+				<div class="form-group">
+					<label for="responseType">Type</label>
+					<select id="responseType" class="form-control" ng-model="type">
+						<option value="text">text</option>
+						<option value="image">image</option>
+						<option value="video">video</option>
+					</select>
+				</div>
+				<div class="form-group">
+					<label for="responseText">Text</label>
+					<input id="responseText" class="form-control" type="text" ng-model="text" />
+				</div>
+			</form>
+		</div>
+		<div class="modal-footer">
+			<button class="btn btn-primary" ng-click="save()">Save</button>
+			<button class="btn btn-warning" ng-click="cancel()">Cancel</button>
+		</div>
+	</script>
+	<script type="text/ng-template" id="editOption.html">
+		<div class="modal-header">
+			<h3 class="modal-title">Edit option</h3>
+		</div>
+		<div class="modal-body">
+			<form>
+				<div class="form-group">
+					<label for="optionLabel">Label</label>
+					<input id="optionLabel" class="form-control" type="text" ng-model="label" />
+				</div>
+				<div class="form-group">
+					<label for="optionTriggers">Triggers</label>
+					<input id="optionTriggers" class="form-control" type="text" ng-model="triggers" />
+				</div>
+			</form>
+		</div>
+		<div class="modal-footer">
+			<button class="btn btn-primary" ng-click="save()">Save</button>
+			<button class="btn btn-warning" ng-click="cancel()">Cancel</button>
+		</div>
+	</script>
 	<script src="js/angular.min.js"></script>
+	<script src="js/ui-bootstrap-tpls-2.5.0.min.js"></script>
 	<script src="js/kite.js"></script>
 </body>
 </html>
