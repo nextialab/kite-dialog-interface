@@ -43,6 +43,36 @@ angular.module('kite', ['ui.bootstrap'])
 	}
 
 }])
+.controller('editExample', ['$scope', '$uibModalInstance', 'example', function ($scope, $uibModalInstance, example) {
+
+	$scope.example = '';
+
+	if (example) {
+		$scope.example = example;
+	}
+
+	$scope.save = function () {
+		$uibModalInstance.close($scope.example);
+	}
+
+	$scope.cancel = function () {
+		$uibModalInstance.dismiss('cancel');
+	}
+
+}])
+.controller('loadJson', ['$scope', '$uibModalInstance', function ($scope, $uibModalInstance) {
+
+	$scope.json = '';
+
+	$scope.load = function () {
+		$uibModalInstance.close(JSON.parse($scope.json));
+	}
+
+	$scope.cancel = function () {
+		$uibModalInstance.dismiss('cancel');
+	}
+
+}])
 .controller('mainController', ['$scope', '$uibModal', function ($scope, $uibModal) {
 
 	$scope.json = {};
@@ -67,13 +97,13 @@ angular.module('kite', ['ui.bootstrap'])
 		options: []
 	}
 
-	$scope.example = '';
 	$scope.control = {};
 	$scope.event = {};
 	$scope.entity = {};
 
 	$scope.getJson = function () {
-		return JSON.stringify($scope.json, null, 2);
+		var json = angular.copy($scope.json);
+		return JSON.stringify(json, null, 2);
 	}
 
 	$scope.addOption = function () {
@@ -260,7 +290,7 @@ angular.module('kite', ['ui.bootstrap'])
 			}
 			$scope.json.events.push(angular.copy($scope.event));
 		}
-		generateFlow();
+		//generateFlow();
 		$scope.control = angular.copy(control);
 		$scope.event = angular.copy(event);
 	}
@@ -285,12 +315,12 @@ angular.module('kite', ['ui.bootstrap'])
 
 	$scope.removeEvent = function (index) {
 		$scope.json.events.splice(index, 1);
-		generateFlow();
+		//generateFlow();
 	}
 
 	$scope.removeEntity = function (index) {
 		$scope.json.entities.splice(index, 1);
-		generateFlow();
+		//generateFlow();
 	}
 
 	$scope.getRowClass = function (row) {
@@ -302,15 +332,59 @@ angular.module('kite', ['ui.bootstrap'])
 	}
 
 	$scope.addExample = function () {
-		$scope.entity.examples.push($scope.example.slice(0));
+		$uibModal.open({
+			templateUrl: 'editExample.html',
+			controller: 'editExample',
+			resolve: {
+				example: null
+			}
+		}).result.then(function (exm) {
+			$scope.entity.examples.push(exm);
+		}, function (err) {
+			console.log(err);
+		});
 	}
 
-	$scope.addEntity = function () {
-		$scope.json.entities.push(angular.copy($scope.entity));
-		generateFlow();
+	$scope.editExample = function (index, example) {
+		$uibModal.open({
+			templateUrl: 'editExample.html',
+			controller: 'editExample',
+			resolve: {
+				example: function () {
+					return example;
+				}
+			}
+		}).result.then(function (exm) {
+			$scope.entity.examples[index] = exm;
+		}, function (err) {
+			console.log(err);
+		});
+	}
+
+	$scope.removeExample = function (index) {
+		$scope.entity.examples.splice(index, 1);
+	}
+
+	$scope.saveEntity = function () {
+		var entity_to_save = $scope.json.entities.find(function (entity) {
+			return entity.name === $scope.entity.name;
+		});
+		if (entity_to_save) {
+			entity_to_save.examples = $scope.entity.examples;
+			entity_to_save.triggers = $scope.entity.triggers;
+		} else {
+			$scope.json.entities.push(angular.copy($scope.entity));
+		}
+		//generateFlow();
 		$scope.entity = angular.copy(entity);
 	}
 
+	$scope.editEntity = function (index) {
+		var entity_to_edit = $scope.json.entities[index];
+		$scope.entity.name = entity_to_edit.name;
+		$scope.entity.examples = entity_to_edit.examples;
+		$scope.entity.triggers = entity_to_edit.triggers;
+	}
 
 	$scope.copyJson = function () {
 		var el = document.createElement('textarea');
@@ -327,6 +401,17 @@ angular.module('kite', ['ui.bootstrap'])
 			document.getSelection().removeAllRanges();
 			document.getSelection().addRange(selected);
 		}
+	}
+
+	$scope.loadJson = function () {
+		$uibModal.open({
+			templateUrl: 'loadJson.html',
+			controller: 'loadJson'
+		}).result.then(function (json) {
+			$scope.json = json;
+		}, function (err) {
+			console.log(err);
+		});
 	}
 
 	$scope.control = angular.copy(control);

@@ -7,10 +7,14 @@
 	<link rel="stylesheet" type="text/css" href="css/kite.css" />
 </head>
 <body ng-app="kite">
-	<h1>Kite Dialog Interface</h1>
 	<div ng-controller="mainController">
-		<p>Name: <input ng-model="json.name" type="text" /></p>
 		<div class="container-fluid">
+			<div class="row">
+				<div class="col-sm-12">
+					<h1>Kite Dialog Interface</h1>
+					<p>Name: <input ng-model="json.name" type="text" /></p>
+				</div>
+			</div>
 			<div class="row">
 				<div class="col-sm-4">
 					<h2>Events</h2>
@@ -70,7 +74,7 @@
 						</div>
 					</form>
 					<p><button class="btn btn-primary" ng-click="saveEvent()">Save event</button></p>
-					<p><b>Events</b></p>
+					<h3>Events</h3>
 					<table class="table">
 						<tr>
 							<th>Event name</th>
@@ -83,28 +87,44 @@
 					</table>
 				</div>
 				<div class="col-sm-4">
+					<h2>Entities</h2>
+					<form>
+						<div class="form-group">
+							<label for="entityName">Name:</label>
+							<input id="entityName" class="form-control" ng-model="entity.name" type="text" />
+						</div>
+						<p><b>Examples:</b></p>
+						<table class="table">
+							<tr>
+								<th>Example</th>
+								<th>Actions</th>
+							</tr>
+							<tr ng-repeat="example in entity.examples">
+								<td>{{ example }}</td>
+								<td><button class="btn btn-primary" ng-click="editExample($index, example)"><span class="glyphicon glyphicon-edit"></span></button> <button class="btn btn-danger" ng-click="removeExample($index)"><span class="glyphicon glyphicon-trash"></span></button></td>
+							</tr>
+						</table>
+						<p><button class="btn btn-success" ng-click="addExample()">Add example</button></p>
+						<div class="form-group">
+							<label for="entityTriggers">Triggers:</label>
+							<input id="entityTriggers" class="form-control" ng-model="entity.triggers" />
+						</div>
+					</form>
+					<p><button class="btn btn-primary" ng-click="saveEntity()">Save entity</button></p>
 					<h3>Entities</h3>
-					<p><b>Name:</b></p>
-					<p><input ng-model="entity.name" type="text" /></p>
-					<p><b>Examples:</b></p>
-					<p ng-repeat="example in entity.examples">{{ example }}</p>
-					<p><input ng-model="example" type="text" /><button ng-click="addExample()">+ example</button></p>
-					<p><b>Triggers:</b></p>
-					<p><input ng-model="entity.triggers" /></p>
-					<p><button class="btn btn-primary" ng-click="addEntity()">Save entity</button></p>
-					<table>
+					<table class="table">
 						<tr>
-							<th>Entity</th>
+							<th>Entity name</th>
 							<th>Actions</th>
 						</tr>
 						<tr ng-repeat="entity in json.entities">
 							<td>{{ entity.name }}</td>
-							<td><button>Edit</button> <button ng-click="removeEntity($index)">Remove</button></td>
+							<td><button ng-click="editEntity($index)">Edit</button> <button ng-click="removeEntity($index)">Remove</button></td>
 						</tr>
 					</table>
 				</div>
 				<div class="col-sm-4">
-					<h3>Flow</h3>
+					<h2>Flow</h2>
 					<div ng-repeat="row in flow">
 						<div ng-repeat="event in row" ng-class="getRowClass(row)"><p class="center">{{ event.name }}</p></div>
 					</div>
@@ -112,8 +132,8 @@
 			</div>
 			<div class="row">
 				<div class="col-sm-12">
-					<h3>JSON</h3>
-					<p> <button ng-click="copyJson()">Copy</button> <button ng-click="loadJson()">Load</button></p>
+					<h2>JSON</h2>
+					<p> <button class="btn btn-primary" ng-click="copyJson()">Copy</button> <button class="btn btn-primary" ng-click="loadJson()">Load</button></p>
 					<pre><code>{{ getJson() }}</code></pre>
 				</div>
 			</div>
@@ -162,6 +182,40 @@
 		</div>
 		<div class="modal-footer">
 			<button class="btn btn-primary" ng-click="save()">Save</button>
+			<button class="btn btn-warning" ng-click="cancel()">Cancel</button>
+		</div>
+	</script>
+	<script type="text/ng-template" id="editExample.html">
+		<div class="modal-header">
+			<h3 class="modal-title">Edit example</h3>
+		</div>
+		<div class="modal-body">
+			<form>
+				<div class="form-group">
+					<label for="example">Example:</label>
+					<input id="example" class="form-control" type="text" ng-model="example" />
+				</div>
+			</form>
+		</div>
+		<div class="modal-footer">
+			<button class="btn btn-primary" ng-click="save()">Save</button>
+			<button class="btn btn-warning" ng-click="cancel()">Cancel</button>
+		</div>
+	</script>
+	<script type="text/ng-template" id="loadJson.html">
+		<div class="modal-header">
+			<h3 class="modal-title">Load JSON</h3>
+		</div>
+		<div class="modal-body">
+			<form>
+				<div class="form-group">
+					<label for="example">JSON:</label>
+					<textarea id="example" class="form-control" type="text" ng-model="json"></textarea>
+				</div>
+			</form>
+		</div>
+		<div class="modal-footer">
+			<button class="btn btn-primary" ng-click="load()">Save</button>
 			<button class="btn btn-warning" ng-click="cancel()">Cancel</button>
 		</div>
 	</script>
