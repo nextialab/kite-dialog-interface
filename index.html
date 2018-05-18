@@ -33,7 +33,7 @@
 							<tr ng-repeat="response in event.responses">
 								<td>{{ response.type }}</td>
 								<td>{{ response.text }}</td>
-								<td><button class="btn" disabled="disabled"><span class="glyphicon glyphicon-chevron-up"></span></button> <button class="btn" disabled="disabled"><span class="glyphicon glyphicon-chevron-down"></button> <button class="btn btn-primary" ng-click="editResponse(response)"><span class="glyphicon glyphicon-edit"></span></button> <button class="btn btn-danger" ng-click="removeResponse($index)"><span class="glyphicon glyphicon-trash"></span></button></td>
+								<td><button class="btn" ng-disabled="$first" ng-click="responseUp($index)"><span class="glyphicon glyphicon-chevron-up"></span></button> <button class="btn" ng-disabled="$last" ng-click="responseDown($index)"><span class="glyphicon glyphicon-chevron-down"></button> <button class="btn btn-primary" ng-click="editResponse(response)"><span class="glyphicon glyphicon-edit"></span></button> <button class="btn btn-danger" ng-click="removeResponse($index)"><span class="glyphicon glyphicon-trash"></span></button></td>
 							</tr>
 						</table>
 						<p>
@@ -125,9 +125,7 @@
 				</div>
 				<div class="col-sm-4">
 					<h2>Flow</h2>
-					<div ng-repeat="row in flow">
-						<div ng-repeat="event in row" ng-class="getRowClass(row)"><p class="center">{{ event.name }}</p></div>
-					</div>
+					<sigma-js graph-id="graph" graph="flow"></sigma-js>
 				</div>
 			</div>
 			<div class="row">
@@ -215,10 +213,16 @@
 			</form>
 		</div>
 		<div class="modal-footer">
-			<button class="btn btn-primary" ng-click="load()">Save</button>
+			<button class="btn btn-primary" ng-click="load()">Load</button>
 			<button class="btn btn-warning" ng-click="cancel()">Cancel</button>
 		</div>
 	</script>
+	<script type="text/ng-template" id="sigma.html">
+		<div id="graph" class="graph"></div>
+	</script>
+	<script src="js/sigma.min.js"></script>
+	<script src="js/sigma.plugins.animate.js"></script>
+	<script src="js/sigma.layout.noverlap.js"></script>
 	<script src="js/angular.min.js"></script>
 	<script src="js/ui-bootstrap-tpls-2.5.0.min.js"></script>
 	<script src="js/kite.js"></script>

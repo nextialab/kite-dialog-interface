@@ -1,4 +1,33 @@
 angular.module('kite', ['ui.bootstrap'])
+.component('sigmaJs', {
+	templateUrl: 'sigma.html',
+	bindings: {
+		graph: '<'
+	},
+	controller: function () {
+
+		var $ctrl = this;
+		$ctrl.sigma = null;
+
+		$ctrl.$onInit = function () {
+			$ctrl.sigma = new sigma('graph');
+		    $ctrl.sigma.configNoverlap({
+		    	nodeMargin: 3.0,
+		    	scaleNodes: 1.3
+			});
+		}
+
+		$ctrl.$onChanges = function (changes) {
+			if ($ctrl.sigma) {
+				$ctrl.sigma.graph.clear();
+				$ctrl.sigma.graph.read(changes.graph.currentValue);
+				$ctrl.sigma.refresh();
+				$ctrl.sigma.startNoverlap();
+			}
+		}
+
+	}
+})
 .controller('editResponse', ['$scope', '$uibModalInstance', 'response', function ($scope, $uibModalInstance, response) {
 
 	$scope.type = 'text';
@@ -79,7 +108,10 @@ angular.module('kite', ['ui.bootstrap'])
 	$scope.json.name = '';
 	$scope.json.events = [];
 	$scope.json.entities = [];
-	$scope.flow = [];
+	$scope.flow = {
+		nodes: [],
+		edges: []
+	};
 
 	var event = {
 		name: '',
@@ -143,6 +175,18 @@ angular.module('kite', ['ui.bootstrap'])
 		$scope.event.responses.splice(index, 1);
 	}
 
+	$scope.responseDown = function (index) {
+		var temp = $scope.event.responses[index];
+		$scope.event.responses[index] = $scope.event.responses[index + 1];
+		$scope.event.responses[index + 1] = temp;
+	}
+
+	$scope.responseUp = function (index) {
+		var temp = $scope.event.responses[index];
+		$scope.event.responses[index] = $scope.event.responses[index - 1];
+		$scope.event.responses[index - 1] = temp;
+	}
+
 	$scope.addResponse = function () {
 		$uibModal.open({
 			controller: 'editResponse',
@@ -173,76 +217,63 @@ angular.module('kite', ['ui.bootstrap'])
 	}
 
 	function generateFlow() {
-		function getEvent(name) {
-			var event_to_find = $scope.json.events.find(function (event) {
-				return event.name === name;
-			});
-			if (event_to_find) {
-				return angular.copy(event_to_find);
-			} else {
-				return event_to_find;
-			}
+		var flow = {
+			nodes: [],
+			edges: []
 		}
-		function getEntity(name) {
-			var entity_to_find = $scope.json.entities.find(function (entity) {
-				return entity.name === name;
-			});
-			if (entity_to_find) {
-				return angular.copy(entity_to_find);
-			} else {
-				return entity_to_find;
-			}
-		}
-		function getRow(event) {
-			var nextrow = [];
-			if (event.control) { // event
-				if (event.control.type === 'options') {
-					event.control.options.forEach(function (option) {
-						var next = getEvent(option.triggers);
-						if (next) {
-							nextrow.push(next);
-						}
+		var id = 0;
+		$scope.json.events.forEach(function (event) {
+			var triggers = [];
+			if (event.control) {
+				if (event.control.type == 'options') {
+					triggers = event.control.options.map(function (option) {
+						return option.triggers;
 					});
-				} else if (event.control.type === 'entity') {
-					var next = getEntity(event.control.entity);
-					if (next) {
-						nextrow.push(next);
-					}
-				}
-			} else { // entity
-				var next = getEvent(event.triggers);
-				if (next) {
-					nextrow.push(next);
+				} else if (event.control.type == 'entity') {
+					triggers.push(event.control.entity);
+				} else if (event.control.type == 'tool') {
+					triggers.push(event.control.tool);
 				}
 			}
-			return nextrow;
-		}
-		function isInRow(row, name) {
-			var exists = row.find(function (event) {
-				return event.name === name;
+			flow.nodes.push({
+				id: 'n' + id,
+				label: event.name,
+				x: 0,
+				y: 0,
+				triggers: triggers,
+				size: 1,
+				color: '#f00'
 			});
-			return exists != undefined;
-		}
-		var flow = [];
-		var next = [getEvent('start')];
-		if (next.length > 0) { 
-			flow.push(next);
-		}
-		while (next.length > 0) {
-			var nextrow = [];
-			next.forEach(function (event) {
-				var row = getRow(event);
-				row.forEach(function (elem) {
-					if (!isInRow(nextrow, elem.name)) {
-						nextrow.push(elem);
-					}
+			id = id + 1;
+		});
+		$scope.json.entities.forEach(function (entity) {
+			flow.nodes.push({
+				id: 'n' + id,
+				label: entity.name,
+				x: 0,
+				y: 0,
+				triggers: [entity.triggers],
+				size: 1,
+				color: '#0f0'
+			});
+			id = id + 1;
+		});
+		id = 0;
+		flow.nodes.forEach(function (node) {
+			node.triggers.forEach((function (next) {
+				var node_to_find = flow.nodes.find(function (_node) {
+					return _node.label === next;
 				});
-			});
-			if (nextrow.length > 0) {
-				flow.push(nextrow);
-			}
-			next = nextrow;
-		}
+				if (node_to_find) {
+					flow.edges.push({
+						id: 'e' + id,
+						source: node.id,
+						target: node_to_find.id
+					});
+					id = id + 1;
+				}
+			}));
+		});
 		$scope.flow = flow;
 	}
 
@@ -290,7 +321,7 @@ angular.module('kite', ['ui.bootstrap'])
 			}
 			$scope.json.events.push(angular.copy($scope.event));
 		}
-		//generateFlow();
+		generateFlow();
 		$scope.control = angular.copy(control);
 		$scope.event = angular.copy(event);
 	}
@@ -315,12 +346,12 @@ angular.module('kite', ['ui.bootstrap'])
 
 	$scope.removeEvent = function (index) {
 		$scope.json.events.splice(index, 1);
-		//generateFlow();
+		generateFlow();
 	}
 
 	$scope.removeEntity = function (index) {
 		$scope.json.entities.splice(index, 1);
-		//generateFlow();
+		generateFlow();
 	}
 
 	$scope.getRowClass = function (row) {
@@ -375,7 +406,7 @@ angular.module('kite', ['ui.bootstrap'])
 		} else {
 			$scope.json.entities.push(angular.copy($scope.entity));
 		}
-		//generateFlow();
+		generateFlow();
 		$scope.entity = angular.copy(entity);
 	}
 
@@ -409,6 +440,7 @@ angular.module('kite', ['ui.bootstrap'])
 			controller: 'loadJson'
 		}).result.then(function (json) {
 			$scope.json = json;
+			generateFlow();
 		}, function (err) {
 			console.log(err);
 		});
