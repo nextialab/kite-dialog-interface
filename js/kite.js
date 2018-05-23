@@ -11,18 +11,19 @@ angular.module('kite', ['ui.bootstrap'])
 
 		$ctrl.$onInit = function () {
 			$ctrl.sigma = new sigma('graph');
-		    $ctrl.sigma.configNoverlap({
+		    /*$ctrl.sigma.configNoverlap({
 		    	nodeMargin: 3.0,
 		    	scaleNodes: 1.3
-			});
+			});*/
 		}
 
 		$ctrl.$onChanges = function (changes) {
 			if ($ctrl.sigma) {
+				console.log(changes.graph.currentValue);
 				$ctrl.sigma.graph.clear();
 				$ctrl.sigma.graph.read(changes.graph.currentValue);
 				$ctrl.sigma.refresh();
-				$ctrl.sigma.startNoverlap();
+				//$ctrl.sigma.startNoverlap();
 			}
 		}
 
@@ -216,12 +217,84 @@ angular.module('kite', ['ui.bootstrap'])
 		});
 	}
 
+	function getItem(name) {
+		var event_to_found = $scope.json.events.find(function (event) {
+			return event.name === name;
+		});
+		var entity_to_found = $scope.json.entities.find(function (entity) {
+			return entity.name === name;
+		});
+		return event_to_found || entity_to_found || undefined;
+	}
+
+	function checkBranch(branch, node) {
+		if (branch.name === node.name) {
+			return {
+				depth: 0,
+				found: true
+			};
+		} else {
+			if (branch.control) { // branch is event
+				if (branch.control.type === 'options') {
+					var checks = branch.control.options.map(function (option) {
+						return checkBranch(getItem(option.triggers), node);
+					});
+					var founds = checks.filter(function (check) {
+						return check.found;
+					});
+					if (founds.length > 0) {
+						var max = founds.reduce(function (acc, found) {
+							if (found.depth > acc.depth) {
+								return found;
+							} else {
+								return acc;
+							}
+						});
+						return {
+							depth: max.depth + 1,
+							found: max.found || false
+						};
+					} else {
+						return {
+							depth: 0,
+							found: false
+						};
+					}
+				} else if (branch.control.type === 'entity') {
+					var check = checkBranch(getItem(branch.control.entity), node);
+					return {
+						depth: check.depth + 1,
+						found: check.found || false
+					};
+				} else { // control is tool
+					var check = checkBranch(getItem(branch.control.tool), node);
+					return {
+						depth: check.depth + 1,
+						found: check.found || false
+					};
+				}
+			} else if (branch.triggers) { // branch is entity
+				var check = checkBranch(getItem(branch.triggers), node);
+				return {
+					depth: check.depth + 1,
+					found: check.found || false
+				};
+			} else { // branch is final
+				return {
+					depth: 0,
+					found: false
+				};
+			}
+		}
+	}
+
 	function generateFlow() {
 		var flow = {
 			nodes: [],
 			edges: []
 		}
 		var id = 0;
+		var start = getItem('start');
 		$scope.json.events.forEach(function (event) {
 			var triggers = [];
 			if (event.control) {
@@ -235,11 +308,18 @@ angular.module('kite', ['ui.bootstrap'])
 					triggers.push(event.control.tool);
 				}
 			}
+			var y = 0;
+			if (start) {
+				var depth = checkBranch(start, event);
+				if (depth.found) {
+					y = depth.depth;
+				}
+			}
 			flow.nodes.push({
 				id: 'n' + id,
 				label: event.name,
 				x: 0,
-				y: 0,
+				y: y,
 				triggers: triggers,
 				size: 1,
 				color: '#f00'
@@ -247,17 +327,41 @@ angular.module('kite', ['ui.bootstrap'])
 			id = id + 1;
 		});
 		$scope.json.entities.forEach(function (entity) {
+			var y = 0;
+			if (start) {
+				var depth = checkBranch(start, entity);
+				if (depth.found) {
+					y = depth.depth;
+				}
+			}
 			flow.nodes.push({
 				id: 'n' + id,
 				label: entity.name,
 				x: 0,
-				y: 0,
+				y: y,
 				triggers: [entity.triggers],
 				size: 1,
 				color: '#0f0'
 			});
 			id = id + 1;
 		});
+		for (var i = 0; i < flow.nodes.length; i++) {
+			var same_depth = flow.nodes.filter(function (node) {
+				return node.y == i;
+			});
+			if (same_depth.length > 0) {
+				var from = 0;
+				if (same_depth.length % 2 == 0) {
+					from = -1 * same_depth.length / 2 + 0.5;
+				} else {
+					from = -1 * (same_depth.length - 1) / 2;
+				}
+				console.log(from);
+				for (var j = 0; j < same_depth.length; j++) {
+					same_depth[j].x = from + j;
+				}
+			}
+		}
 		id = 0;
 		flow.nodes.forEach(function (node) {
 			node.triggers.forEach((function (next) {
