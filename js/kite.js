@@ -11,19 +11,20 @@ angular.module('kite', ['ui.bootstrap'])
 
 		$ctrl.$onInit = function () {
 			$ctrl.sigma = new sigma('graph');
-		    /*$ctrl.sigma.configNoverlap({
+		    $ctrl.sigma.configNoverlap({
 		    	nodeMargin: 3.0,
 		    	scaleNodes: 1.3
-			});*/
+			});
 		}
 
 		$ctrl.$onChanges = function (changes) {
 			if ($ctrl.sigma) {
-				console.log(changes.graph.currentValue);
 				$ctrl.sigma.graph.clear();
 				$ctrl.sigma.graph.read(changes.graph.currentValue);
 				$ctrl.sigma.refresh();
-				//$ctrl.sigma.startNoverlap();
+				if (!changes.graph.currentValue.start) {
+					$ctrl.sigma.startNoverlap();
+				}
 			}
 		}
 
@@ -103,12 +104,13 @@ angular.module('kite', ['ui.bootstrap'])
 	}
 
 }])
-.controller('mainController', ['$scope', '$uibModal', function ($scope, $uibModal) {
+.controller('mainController', ['$scope', '$uibModal', '$timeout', function ($scope, $uibModal, $timeout) {
 
 	$scope.json = {};
 	$scope.json.name = '';
 	$scope.json.events = [];
 	$scope.json.entities = [];
+	$scope.message = '';
 	$scope.flow = {
 		nodes: [],
 		edges: []
@@ -237,7 +239,14 @@ angular.module('kite', ['ui.bootstrap'])
 			if (branch.control) { // branch is event
 				if (branch.control.type === 'options') {
 					var checks = branch.control.options.map(function (option) {
-						return checkBranch(getItem(option.triggers), node);
+						var next = getItem(option.triggers);
+						if (next) {
+							return checkBranch(next, node);
+						} else {
+							return {
+								found: false
+							};
+						}
 					});
 					var founds = checks.filter(function (check) {
 						return check.found;
@@ -289,12 +298,13 @@ angular.module('kite', ['ui.bootstrap'])
 	}
 
 	function generateFlow() {
+		var start = getItem('start');
 		var flow = {
 			nodes: [],
-			edges: []
+			edges: [],
+			start: start ? true : false
 		}
 		var id = 0;
-		var start = getItem('start');
 		$scope.json.events.forEach(function (event) {
 			var triggers = [];
 			if (event.control) {
@@ -345,20 +355,21 @@ angular.module('kite', ['ui.bootstrap'])
 			});
 			id = id + 1;
 		});
-		for (var i = 0; i < flow.nodes.length; i++) {
-			var same_depth = flow.nodes.filter(function (node) {
-				return node.y == i;
-			});
-			if (same_depth.length > 0) {
-				var from = 0;
-				if (same_depth.length % 2 == 0) {
-					from = -1 * same_depth.length / 2 + 0.5;
-				} else {
-					from = -1 * (same_depth.length - 1) / 2;
-				}
-				console.log(from);
-				for (var j = 0; j < same_depth.length; j++) {
-					same_depth[j].x = from + j;
+		if (start) {
+			for (var i = 0; i < flow.nodes.length; i++) {
+				var same_depth = flow.nodes.filter(function (node) {
+					return node.y == i;
+				});
+				if (same_depth.length > 0) {
+					var from = 0;
+					if (same_depth.length % 2 == 0) {
+						from = -1 * same_depth.length / 2 + 0.5;
+					} else {
+						from = -1 * (same_depth.length - 1) / 2;
+					}
+					for (var j = 0; j < same_depth.length; j++) {
+						same_depth[j].x = from + j;
+					}
 				}
 			}
 		}
@@ -536,6 +547,10 @@ angular.module('kite', ['ui.bootstrap'])
 			document.getSelection().removeAllRanges();
 			document.getSelection().addRange(selected);
 		}
+		$scope.message = 'Copied!';
+		$timeout(function () {
+			$scope.message = '';
+		}, 1000);
 	}
 
 	$scope.loadJson = function () {
